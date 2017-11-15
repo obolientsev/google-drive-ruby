@@ -140,7 +140,7 @@ module GoogleDrive
     #               "/path/to/folder",
     #               lambda{|title, parent_folder| create_folder(title, parents: [parent_folder.id])}
     #          )
-    def subcollection_by_path(path, not_found_handler)
+    def subcollection_by_path(path, not_found_handler = nil)
       not_found_handler ||= lambda do |file_title, parent_folder|
         fail(GoogleDrive::Error, 'Folder %s not found' % [file_title, parent_folder])
       end

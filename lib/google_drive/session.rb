@@ -314,7 +314,7 @@ module GoogleDrive
     end
 
     # Returns the root collection.
-    def root_colroot_collectionlection
+    def root_collection
       @root_collection ||= file_by_id('root')
     end
 

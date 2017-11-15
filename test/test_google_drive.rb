@@ -215,9 +215,34 @@ class TestGoogleDrive < Test::Unit::TestCase
       'https://drive.google.com/#folders/%s' % collection.resource_id.split(/:/)[1])
     assert { collection3.files.empty? }
 
+    # Get sub collection by path
+    sub_collection = collection.subcollection_by_path(test_collection_title)
+    assert { sub_collection.is_a?(GoogleDrive::Collection) }
+    assert { sub_collection.title == test_collection_title }
+    assert { !sub_collection.root? }
+    assert { !sub_collection.resource_id.nil? }
+    assert { !sub_collection.subcollection_by_title(test_collection_title).nil? }
+    collection2 = session.collection_by_url(sub_collection.document_feed_url)
+    assert { collection2.files.empty? }
+    collection3 = session.collection_by_url(
+        'https://drive.google.com/#folders/%s' % sub_collection.resource_id.split(/:/)[1])
+    assert { collection3.files.empty? }
+
     # Uploads a test file.
     test_file_path = File.join(File.dirname(__FILE__), 'test_file.txt')
     file = session.upload_from_file(test_file_path, test_file_title, convert: false)
+    assert { file.is_a?(GoogleDrive::File) }
+    assert { file.title == test_file_title }
+    assert { file.available_content_types == ["text/plain"] }
+    assert { file.download_to_string == File.read(test_file_path) }
+
+    # Upload a test file to a folder by path
+    test_file_path = File.join(File.dirname(__FILE__), 'test_file.txt')
+    file = session.upload_from_file(
+        test_file_path,
+        test_file_title,
+        upload_to: [test_collection_title, test_collection_title].join('/')
+    )
     assert { file.is_a?(GoogleDrive::File) }
     assert { file.title == test_file_title }
     assert { file.available_content_types == ["text/plain"] }
@@ -273,6 +298,7 @@ class TestGoogleDrive < Test::Unit::TestCase
     assert { session.files('title' => test_file_title, 'title-exact' => 'true').empty? }
 
     # Deletes collection.
+    delete_test_file(sub_collection, true)
     delete_test_file(collection, true)
     # Ensure the collection is removed from the root collection.
     assert { root.subcollections('title' => test_collection_title, 'title-exact' => 'true').empty? }
