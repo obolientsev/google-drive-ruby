@@ -314,7 +314,7 @@ module GoogleDrive
     end
 
     # Returns the root collection.
-    def root_collection
+    def root_colroot_collectionlection
       @root_collection ||= file_by_id('root')
     end
 
@@ -397,6 +397,9 @@ module GoogleDrive
     #   # Uploads without conversion:
     #   session.upload_from_file("/path/to/hoge.txt", "Hoge", :convert => false)
     #
+    #   Uploads a text file to a folder:
+    #   session.upload_from_file("/path/to/hoge.txt", Hoge, :upload_to => '/path/to/upload/')
+    #
     #   # Uploads with explicit content type:
     #   session.upload_from_file("/path/to/hoge", "Hoge", :content_type => "text/plain")
     #
@@ -404,7 +407,6 @@ module GoogleDrive
     #   session.upload_from_file("/path/to/hoge.csv", "Hoge")
     #   session.upload_from_file("/path/to/hoge", "Hoge", :content_type => "text/csv")
     def upload_from_file(path, title = nil, params = {})
-      # TODO: Add a feature to upload to a folder.
       file_name = ::File.basename(path)
       default_content_type =
         EXT_TO_CONTENT_TYPE[::File.extname(file_name).downcase] ||
@@ -511,6 +513,12 @@ module GoogleDrive
         file_metadata[:mime_type] = params[:convert_mime_type]
       elsif params.fetch(:convert, true) && IMPORTABLE_CONTENT_TYPE_MAP.key?(content_type)
         file_metadata[:mime_type] = IMPORTABLE_CONTENT_TYPE_MAP[content_type]
+      end
+      if params[:upload_to]
+        params[:parents] = root_collection.subcollection_by_path(
+            params[:upload_to],
+            lambda{|folder_title, parent_folder| parent_folder.create_subcollection(folder_title)}
+        )
       end
       if params[:parents]
         file_metadata[:parents] = params[:parents]

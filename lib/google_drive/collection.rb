@@ -124,6 +124,38 @@ module GoogleDrive
       file_by_title_with_type(title, 'application/vnd.google-apps.folder')
     end
 
+    # Returns a collection with a given +path+.
+    # Returns an instance of GoogleDrive::Collection.
+    #
+    # e.g.
+    #
+    #   Get collection by +path+:
+    #   session.collection_by_path("path/to/folder/googledrive")
+    #
+    #   By default, it returns GoogleDrive::Error if one folder from the path not found.
+    #
+    #   You can set specific not found handler.
+    #   You should always pass a callable object to the not found handler:
+    #   session.collection_by_path(
+    #               "/path/to/folder",
+    #               lambda{|title, parent_folder| create_folder(title, parents: [parent_folder.id])}
+    #          )
+    def subcollection_by_path(path, not_found_handler)
+      not_found_handler ||= lambda do |file_title, parent_folder|
+        fail(GoogleDrive::Error, 'Folder %s not found' % [file_title, parent_folder])
+      end
+
+      unless not_found_handler.respond_to?(:call)
+        raise ArgumentError, 'Not found handler needs to be callable.'
+      end
+
+      titles = path.split('/').reject(&:blank?)
+
+      titles.inject(self) do |parent_folder, title|
+        parent_folder.collection_by_title(title) || not_found_handler.call(title, parent_folder)
+      end
+    end
+
     # Returns URL of the deprecated contents feed.
     def contents_url
       document_feed_url + '/contents'
