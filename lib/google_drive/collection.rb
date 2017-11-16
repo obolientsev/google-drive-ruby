@@ -152,7 +152,7 @@ module GoogleDrive
       titles = path.split('/').reject(&:blank?)
 
       titles.inject(self) do |parent_folder, title|
-        parent_folder.collection_by_title(title) || not_found_handler.call(title, parent_folder)
+        parent_folder.subcollection_by_title(title) || not_found_handler.call(title, parent_folder)
       end
     end
 
